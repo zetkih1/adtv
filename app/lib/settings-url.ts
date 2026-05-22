@@ -1,7 +1,7 @@
 import { DEFAULT_LOCALE, isLocale, type Locale } from "../i18n/locales";
 import type { GridSlotId, Stream } from "../types/grid";
 import { DEFAULT_SIZES, type AppSettings, type GridSizes } from "./storage";
-import { extractVideoId, toEmbedUrl } from "./youtube";
+import { embedFromVideoId, extractVideoId, toEmbedUrl } from "./youtube";
 
 const SLOT_IDS: GridSlotId[] = [
   "main",
@@ -12,12 +12,26 @@ const SLOT_IDS: GridSlotId[] = [
   "bottom-right",
 ];
 
+/** Old stream ids from earlier builds → current config ids */
+const LEGACY_STREAM_IDS: Record<string, string> = {
+  "trt-haber": "halk-tv",
+  ahaber: "sozcu",
+  tvnet: "haber-global",
+};
+
 export type AppState = AppSettings & {
   locale: Locale;
 };
 
 function isGridSlot(value: string): value is GridSlotId {
   return SLOT_IDS.includes(value as GridSlotId);
+}
+
+function resolveStreamId(id: string, knownIds: Set<string>): string | null {
+  if (knownIds.has(id)) return id;
+  const migrated = LEGACY_STREAM_IDS[id];
+  if (migrated && knownIds.has(migrated)) return migrated;
+  return null;
 }
 
 function parseRowSizes(value: string | null, fallback: GridSizes): GridSizes {
@@ -48,6 +62,45 @@ function parseColSizes(value: string | null, fallback: GridSizes): GridSizes {
   };
 }
 
+/** Ensure exactly one stream per grid slot */
+function normalizeStreamSlots(
+  streams: Stream[],
+  fallbackStreams: Stream[]
+): Stream[] {
+  const fallbackById = new Map(fallbackStreams.map((s) => [s.id, s]));
+  const bySlot = new Map<GridSlotId, Stream>();
+
+  for (const slot of SLOT_IDS) {
+    const preferred =
+      streams.find((s) => s.slot === slot && fallbackById.get(s.id)?.slot === slot) ??
+      streams.find((s) => s.slot === slot) ??
+      fallbackStreams.find((s) => s.slot === slot);
+    if (preferred) {
+      bySlot.set(slot, { ...preferred, slot });
+    }
+  }
+
+  const placed = new Set(Array.from(bySlot.values()).map((s) => s.id));
+
+  for (const stream of streams) {
+    if (placed.has(stream.id)) continue;
+    const def = fallbackById.get(stream.id);
+    if (!def) continue;
+    if (!bySlot.has(def.slot)) {
+      bySlot.set(def.slot, { ...stream, slot: def.slot });
+      placed.add(stream.id);
+    }
+  }
+
+  for (const fb of fallbackStreams) {
+    if (!bySlot.has(fb.slot)) {
+      bySlot.set(fb.slot, { ...fb });
+    }
+  }
+
+  return SLOT_IDS.map((slot) => bySlot.get(slot)!);
+}
+
 /** panels: streamId@slot~videoId~title (title optional, URI-encoded) */
 function parsePanels(
   value: string | null,
@@ -55,14 +108,22 @@ function parsePanels(
 ): Stream[] {
   if (!value) return fallbackStreams;
 
-  const byId = new Map(fallbackStreams.map((s) => [s.id, { ...s }]));
+  const knownIds = new Set(fallbackStreams.map((s) => s.id));
+  const chunks = value.split("|").filter(Boolean);
 
-  for (const chunk of value.split("|")) {
-    if (!chunk) continue;
+  if (chunks.length < 6) return fallbackStreams;
+
+  const byId = new Map(fallbackStreams.map((s) => [s.id, { ...s }]));
+  let validChunks = 0;
+
+  for (const chunk of chunks) {
     const at = chunk.indexOf("@");
     if (at < 1) continue;
 
-    const streamId = chunk.slice(0, at);
+    const rawId = chunk.slice(0, at);
+    const streamId = resolveStreamId(rawId, knownIds);
+    if (!streamId) continue;
+
     const rest = chunk.slice(at + 1);
     const tilde1 = rest.indexOf("~");
     if (tilde1 < 1) continue;
@@ -77,22 +138,25 @@ function parsePanels(
     const title =
       tilde2 >= 0 ? decodeURIComponent(afterSlot.slice(tilde2 + 1)) : undefined;
 
-    const base = byId.get(streamId);
-    if (!base) continue;
+    if (!videoId || videoId.length < 6) continue;
 
     const embed =
       toEmbedUrl(videoId) ??
-      toEmbedUrl(`https://www.youtube.com/watch?v=${videoId}`);
+      toEmbedUrl(`https://www.youtube.com/watch?v=${videoId}`) ??
+      embedFromVideoId(videoId);
 
     byId.set(streamId, {
-      ...base,
+      ...byId.get(streamId)!,
       slot,
-      embedUrl: embed ?? base.embedUrl,
-      title: title ?? base.title,
+      embedUrl: embed,
+      title: title ?? byId.get(streamId)!.title,
     });
+    validChunks++;
   }
 
-  return Array.from(byId.values());
+  if (validChunks < 6) return fallbackStreams;
+
+  return normalizeStreamSlots(Array.from(byId.values()), fallbackStreams);
 }
 
 function serializePanels(streams: Stream[]): string {

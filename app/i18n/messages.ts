@@ -38,6 +38,10 @@ export type Messages = {
     "bottom-right": string;
   };
   lang: { switch: string; tr: string; en: string };
+  header: {
+    collapse: string;
+    expand: string;
+  };
   geo: {
     suggestTitle: string;
     suggestBody: string;
@@ -106,13 +110,17 @@ const tr: Messages = {
     tr: "TR",
     en: "EN",
   },
+  header: {
+    collapse: "Üst çubuğu gizle",
+    expand: "Üst çubuğu göster",
+  },
   geo: {
-    suggestTitle: "İngilizce dilini tercih eder misiniz?",
+    suggestTitle: "Do you wanna switch to English?",
     suggestBody:
-      "Türkiye dışından bağlandığınız görünüyor. Arayüzü İngilizce kullanmak ister misiniz?",
-    switchEn: "İngilizceye geç",
-    stayTr: "Türkçe kalsın",
-    dismiss: "Kapat",
+      "We noticed that you're launching from another region. Wanna use UI as English?",
+    switchEn: "Switch to English",
+    stayTr: "Keep it Turkish",
+    dismiss: "Close",
   },
 };
 
@@ -174,6 +182,10 @@ const en: Messages = {
     switch: "Language",
     tr: "TR",
     en: "EN",
+  },
+  header: {
+    collapse: "Hide header",
+    expand: "Show header",
   },
   geo: {
     suggestTitle: "Prefer English?",

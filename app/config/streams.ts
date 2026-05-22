@@ -1,49 +1,49 @@
 import type { GridSlotId } from "../types/grid";
+import { embedFromVideoId } from "../lib/youtube";
 
 export type StreamConfig = {
   id: string;
   title: string;
-  /** YouTube /embed/ URL — use live video IDs from each channel */
   embedUrl: string;
   slot: GridSlotId;
 };
 
-/** Edit embedUrl with each channel's current live stream video ID */
+/** Default live streams — video IDs from each channel's current broadcast */
 export const STREAMS: StreamConfig[] = [
   {
-    id: "cnn-turk",
-    title: "CNN TÜRK",
-    embedUrl: "https://www.youtube.com/embed/CV5Fooi4Y-c?autoplay=1&mute=1",
+    id: "ntv",
+    title: "NTV Canlı Yayın",
+    embedUrl: embedFromVideoId("pqq5c6k70kk"),
     slot: "main",
   },
   {
-    id: "trt-haber",
-    title: "TRT Haber",
-    embedUrl: "https://www.youtube.com/embed/8WPME1G7ueE?autoplay=1&mute=1",
+    id: "cnn-turk",
+    title: "CNN TÜRK",
+    embedUrl: embedFromVideoId("6N8_r2uwLEc"),
     slot: "top-right",
   },
   {
-    id: "ahaber",
-    title: "A Haber",
-    embedUrl: "https://www.youtube.com/embed/RqUZ2Fv9l8w?autoplay=1&mute=1",
+    id: "sozcu",
+    title: "SÖZCÜ TV",
+    embedUrl: embedFromVideoId("ztmY_cCtUl0"),
     slot: "mid-right",
   },
   {
-    id: "ntv",
-    title: "NTV",
-    embedUrl: "https://www.youtube.com/embed/8WPME1G7ueE?autoplay=1&mute=1",
+    id: "haberturk",
+    title: "Habertürk TV",
+    embedUrl: embedFromVideoId("RNVNlJSUFoE"),
     slot: "bottom-left",
   },
   {
-    id: "haberturk",
-    title: "Habertürk",
-    embedUrl: "https://www.youtube.com/embed/8WPME1G7ueE?autoplay=1&mute=1",
+    id: "halk-tv",
+    title: "HALK TV",
+    embedUrl: embedFromVideoId("8uNelFh0oz4"),
     slot: "bottom-center",
   },
   {
-    id: "tvnet",
-    title: "TVNET",
-    embedUrl: "https://www.youtube.com/embed/8WPME1G7ueE?autoplay=1&mute=1",
+    id: "haber-global",
+    title: "Haber Global TV",
+    embedUrl: embedFromVideoId("EqoCJ8BPxtE"),
     slot: "bottom-right",
   },
 ];

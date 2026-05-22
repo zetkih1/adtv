@@ -10,6 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { GridSlotId, Stream } from "../types/grid";
+import { getCookie, setCookie } from "../lib/cookies";
 import type { GridSizes } from "../lib/storage";
 import { useApp } from "../providers/AppProvider";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -58,6 +59,17 @@ export function NewsGrid() {
     setShowTitles,
   } = useApp();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+
+  useEffect(() => {
+    setHeaderCollapsed(getCookie("adtv-header-collapsed") === "1");
+  }, []);
+
+  const toggleHeader = () => {
+    const next = !headerCollapsed;
+    setHeaderCollapsed(next);
+    setCookie("adtv-header-collapsed", next ? "1" : "0");
+  };
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<GridSlotId | null>(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -156,60 +168,69 @@ export function NewsGrid() {
   );
 
   useEffect(() => {
+    let rafId: number | null = null;
     const onMove = (e: PointerEvent) => {
-      const r = resizeRef.current;
-      const grid = gridRef.current;
-      if (!r || !grid) return;
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const r = resizeRef.current;
+        const grid = gridRef.current;
+        if (!r || !grid) return;
 
-      const rect = grid.getBoundingClientRect();
-      const gap = 3;
-      const gapsX = gap * 2;
-      const gapsY = gap * 2;
+        const rect = grid.getBoundingClientRect();
+        const gap = 3;
+        const gapsX = gap * 2;
+        const gapsY = gap * 2;
 
-      if (r.axis === "vertical") {
-        const x = e.clientX - rect.left;
-        const pct = Math.min(0.82, Math.max(0.48, (x - gap) / (rect.width - gapsX)));
-        const mainFr = pct * 3;
-        const sideFr = (1 - pct) * 3;
-        setSizes({
-          ...r.initial,
-          col1: mainFr * 0.5,
-          col2: mainFr * 0.5,
-          col3: sideFr,
-        });
-      } else if (r.axis === "horizontal") {
-        const y = e.clientY - rect.top;
-        const pct = Math.min(0.82, Math.max(0.52, (y - gap) / (rect.height - gapsY)));
-        const topFr = pct * 3;
-        const bottomFr = (1 - pct) * 3;
-        const topTotal = r.initial.row1 + r.initial.row2;
-        const ratio = r.initial.row1 / topTotal;
-        setSizes({
-          ...r.initial,
-          row1: topFr * ratio,
-          row2: topFr * (1 - ratio),
-          row3: bottomFr,
-        });
-      } else {
-        const y = e.clientY - rect.top;
-        const yNorm = (y - gap) / (rect.height - gapsY);
-        const topTotal = r.initial.row1 + r.initial.row2;
-        const fullSum = topTotal + r.initial.row3;
-        const minRow1 = topTotal * 0.18;
-        const maxRow1 = topTotal * 0.82;
-        const targetRow1 = Math.min(
-          maxRow1,
-          Math.max(minRow1, yNorm * fullSum)
-        );
-        setSizes({
-          ...r.initial,
-          row1: targetRow1,
-          row2: topTotal - targetRow1,
-        });
-      }
+        if (r.axis === "vertical") {
+          const x = e.clientX - rect.left;
+          const pct = Math.min(0.82, Math.max(0.48, (x - gap) / (rect.width - gapsX)));
+          const mainFr = pct * 3;
+          const sideFr = (1 - pct) * 3;
+          setSizes({
+            ...r.initial,
+            col1: mainFr * 0.5,
+            col2: mainFr * 0.5,
+            col3: sideFr,
+          });
+        } else if (r.axis === "horizontal") {
+          const y = e.clientY - rect.top;
+          const pct = Math.min(0.82, Math.max(0.52, (y - gap) / (rect.height - gapsY)));
+          const topFr = pct * 3;
+          const bottomFr = (1 - pct) * 3;
+          const topTotal = r.initial.row1 + r.initial.row2;
+          const ratio = r.initial.row1 / topTotal;
+          setSizes({
+            ...r.initial,
+            row1: topFr * ratio,
+            row2: topFr * (1 - ratio),
+            row3: bottomFr,
+          });
+        } else {
+          const y = e.clientY - rect.top;
+          const yNorm = (y - gap) / (rect.height - gapsY);
+          const topTotal = r.initial.row1 + r.initial.row2;
+          const fullSum = topTotal + r.initial.row3;
+          const minRow1 = topTotal * 0.18;
+          const maxRow1 = topTotal * 0.82;
+          const targetRow1 = Math.min(
+            maxRow1,
+            Math.max(minRow1, yNorm * fullSum)
+          );
+          setSizes({
+            ...r.initial,
+            row1: targetRow1,
+            row2: topTotal - targetRow1,
+          });
+        }
+      });
     };
 
     const onUp = (e: PointerEvent) => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       if (!resizeRef.current) return;
       resizeRef.current = null;
       setIsResizing(false);
@@ -233,20 +254,70 @@ export function NewsGrid() {
   }, []);
 
   return (
-    <div className="news-shell">
+    <div
+      className={`news-shell${headerCollapsed ? " news-shell--header-collapsed" : ""}`}
+    >
       <header className="news-header">
         <div className="news-brand">
           <span className="news-brand-dot" aria-hidden />
           <h1>{t("brand")}</h1>
         </div>
-        <p className="news-hint">
-          {showTitles
-            ? t("hint.withTitles")
-            : shiftHeld
-              ? t("hint.shiftHeld")
-              : t("hint.noTitles")}
-        </p>
+        {!headerCollapsed && (
+          <p className="news-hint">
+            {showTitles
+              ? t("hint.withTitles")
+              : shiftHeld
+                ? t("hint.shiftHeld")
+                : t("hint.noTitles")}
+          </p>
+        )}
         <div className="news-header-actions">
+          <button
+            type="button"
+            className="news-header-btn"
+            onClick={toggleHeader}
+            aria-label={
+              headerCollapsed ? t("header.expand") : t("header.collapse")
+            }
+            title={headerCollapsed ? t("header.expand") : t("header.collapse")}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className={headerCollapsed ? "news-chevron--down" : "news-chevron--up"}
+            >
+              <path d="M6 15l6-6 6 6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="news-header-btn"
+            onClick={() => setSettingsOpen(true)}
+            aria-label={t("settings.open")}
+            title={t("settings.title")}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
           <LanguageSwitcher />
         </div>
       </header>
@@ -323,6 +394,7 @@ export function NewsGrid() {
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="strict-origin-when-cross-origin"
+                    className="absolute inset-0 w-full h-full border-0"
                     style={
                       !showTitles
                         ? {
@@ -359,29 +431,6 @@ export function NewsGrid() {
             onPointerDown={(e) => startResize("sideStack", e)}
           />
         </div>
-
-        <button
-          type="button"
-          className="news-settings-fab"
-          onClick={() => setSettingsOpen(true)}
-          aria-label={t("settings.open")}
-          title={t("settings.title")}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-          </svg>
-        </button>
       </div>
 
       <SettingsPanel

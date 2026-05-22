@@ -1,0 +1,11 @@
+{
+  "name": "ADTV — Canlı Haber Duvarı",
+  "short_name": "ADTV",
+  "description": "Çok kanallı canlı haber izleme duvarı",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050508",
+  "theme_color": "#3b82f6",
+  "lang": "tr",
+  "orientation": "any"
+}

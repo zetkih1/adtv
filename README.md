@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ADTV — Canlı Haber Duvarı
 
-## Getting Started
+Watch multiple Turkish news channels at once in a resizable, drag-and-drop six-panel grid.
 
-First, run the development server:
+## Features
+
+- **6 live panels** — one primary feed and five side/bottom channels
+- **Drag to swap** — reorder any panel by dragging
+- **Resizable layout** — splitters between main, side stack, and bottom row
+- **Settings** — hide title bars, edit YouTube URLs, fetch titles via oEmbed
+- **Turkish / English** — TR default, EN optional (URL: `?lang=en`)
+- **Shareable layout** — grid, streams, and language stored in the URL query string
+- **Geo hint** — suggests English for visitors outside Turkey
+
+## Quick start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local` and set your production URL for SEO:
 
-## Learn More
+```bash
+NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
+```
 
-To learn more about Next.js, take a look at the following resources:
+## URL parameters
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Param | Description |
+|-------|-------------|
+| `lang` | `tr` (default) or `en` |
+| `titles` | `1` show title bars, `0` hide |
+| `c` | Column sizes, e.g. `1,1,0.85` |
+| `r` | Row sizes, e.g. `1,1,0.75` |
+| `p` | Panel config: `id@slot~videoId~title` (pipe-separated) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Configure channels
 
-## Deploy on Vercel
+Edit default streams in `app/config/streams.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js 16](https://nextjs.org/)
+- React 19
+- Tailwind CSS 4
+
+## License
+
+Private — All rights reserved.

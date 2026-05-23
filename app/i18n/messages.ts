@@ -3,7 +3,7 @@ import type { Locale } from "./locales";
 export type Messages = {
   meta: { title: string; description: string };
   brand: string;
-  hint: { withTitles: string; noTitles: string; shiftHeld: string };
+  hint: { withTitles: string; noTitles: string };
   badge: { primary: string };
   drag: { panel: string };
   resize: { vertical: string; horizontal: string; side: string };
@@ -59,8 +59,7 @@ const tr: Messages = {
   brand: "ADTV",
   hint: {
     withTitles: "Yer değiştirmek için başlık çubuğunu sürükleyin · Boyutlandırmak için ayırıcıları sürükleyin",
-    noTitles: "Yer değiştirmek için paneli sürükleyin · Video kontrolleri için Shift basılı tutun",
-    shiftHeld: "Panelleri sürüklemek için Shift'i bırakın",
+    noTitles: "Yer değiştirmek için panelin üzerindeki hareketli tutamacı sürükleyin",
   },
   badge: {
     primary: "Ana",
@@ -79,7 +78,7 @@ const tr: Messages = {
     close: "Ayarları kapat",
     showTitles: "Panel başlık çubuklarını göster",
     showTitlesHint:
-      "Kapalıyken tam video alanından sürükleyerek yer değiştirin. Kontroller için Shift basılı tutun",
+      "Kapalıyken videonun üzerinde beliren hareketli tutamacı sürükleyerek yer değiştirin",
     streamSources: "Yayın kaynakları",
     streamNote:
       "Başlıklar YouTube'dan alınır (iframe'den okunamaz — tarayıcı engeller). İzleme veya gömme bağlantısı yapıştırın, ardından başlığı getir'e tıklayın.",
@@ -132,8 +131,7 @@ const en: Messages = {
   brand: "ADTV",
   hint: {
     withTitles: "Drag title bar to swap · Drag splitters to resize all panels",
-    noTitles: "Drag any panel to swap · Hold Shift for video controls",
-    shiftHeld: "Release Shift to drag panels again",
+    noTitles: "Drag the moving handle over a panel to swap",
   },
   badge: {
     primary: "Primary",
@@ -152,7 +150,7 @@ const en: Messages = {
     close: "Close settings",
     showTitles: "Show panel title bars",
     showTitlesHint:
-      "When off, drag the full video area to swap. Hold Shift for controls",
+      "When off, drag the moving handle that appears over each video to swap",
     streamSources: "Stream sources",
     streamNote:
       "Titles are fetched from YouTube (not from the iframe — browsers block that). Paste a watch or embed link, then use Fetch title.",

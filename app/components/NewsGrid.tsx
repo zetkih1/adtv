@@ -73,7 +73,6 @@ export function NewsGrid() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<GridSlotId | null>(null);
   const [isResizing, setIsResizing] = useState(false);
-  const [shiftHeld, setShiftHeld] = useState(false);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<{
@@ -81,24 +80,6 @@ export function NewsGrid() {
     start: number;
     initial: GridSizes;
   } | null>(null);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Shift") setShiftHeld(true);
-    };
-    const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Shift") setShiftHeld(false);
-    };
-    const onBlur = () => setShiftHeld(false);
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", onBlur);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onBlur);
-    };
-  }, []);
 
   const colSum = sizes.col1 + sizes.col2 + sizes.col3;
   const rowSum = sizes.row1 + sizes.row2 + sizes.row3;
@@ -264,11 +245,7 @@ export function NewsGrid() {
         </div>
         {!headerCollapsed && (
           <p className="news-hint">
-            {showTitles
-              ? t("hint.withTitles")
-              : shiftHeld
-                ? t("hint.shiftHeld")
-                : t("hint.noTitles")}
+            {showTitles ? t("hint.withTitles") : t("hint.noTitles")}
           </p>
         )}
         <div className="news-header-actions">
@@ -379,31 +356,45 @@ export function NewsGrid() {
                 )}
 
                 <div className="news-cell-frame">
-                  {!showTitles && !shiftHeld && (
+                  {!showTitles && (
                     <div
                       className="news-cell-drag-layer"
                       {...bindDrag(stream.id)}
                       aria-label={t("drag.panel", { title: stream.title })}
-                    />
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 14 14"
+                        fill="currentColor"
+                        aria-hidden
+                      >
+                        <circle cx="3" cy="3" r="1.2" />
+                        <circle cx="7" cy="3" r="1.2" />
+                        <circle cx="11" cy="3" r="1.2" />
+                        <circle cx="3" cy="7" r="1.2" />
+                        <circle cx="7" cy="7" r="1.2" />
+                        <circle cx="11" cy="7" r="1.2" />
+                        <circle cx="3" cy="11" r="1.2" />
+                        <circle cx="7" cy="11" r="1.2" />
+                        <circle cx="11" cy="11" r="1.2" />
+                      </svg>
+                    </div>
                   )}
-                  <iframe
-                    key={stream.embedUrl}
-                    src={stream.embedUrl}
-                    title={stream.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    className="absolute inset-0 w-full h-full border-0"
-                    style={
-                      !showTitles
-                        ? {
-                            pointerEvents:
-                              shiftHeld || dragId ? "auto" : "none",
-                          }
-                        : undefined
-                    }
-                  />
+                  {!showTitles && dragId && (
+                    <div className="news-cell-drop-layer" aria-hidden />
+                  )}
+                  <div className="news-cell-iframe-wrap">
+                    <iframe
+                      key={stream.embedUrl}
+                      src={stream.embedUrl}
+                      title={stream.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                    />
+                  </div>
                 </div>
               </article>
             );

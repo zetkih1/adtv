@@ -1,5 +1,9 @@
 import { NewsGrid } from "./components/NewsGrid";
 
 export default function Page() {
-  return <NewsGrid />;
+  return (
+    <main className="news-stage">
+      <NewsGrid />
+    </main>
+  );
 }

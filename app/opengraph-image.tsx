@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { siteConfig } from "./lib/seo";
 
 export const runtime = "edge";
-export const alt = "ADTV — Canlı Haber Duvarı";
+export const alt = "ADTV - Haber kanallarını eş zamanlı olarak takip edin";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

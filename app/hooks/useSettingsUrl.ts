@@ -26,15 +26,22 @@ export function useSettingsUrl(fallbackStreams: Stream[]) {
 
   const skipNextWrite = useRef(false);
   const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stateRef = useRef(state);
+
+  const updateState = useCallback((next: AppState) => {
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
   const applyFromUrl = useCallback(() => {
     const parsed = parseSettingsFromParams(searchParams, fallbackStreams);
     skipNextWrite.current = true;
-    setState(parsed);
+    updateState(parsed);
     setHydrated(true);
-  }, [searchParams, fallbackStreams]);
+  }, [searchParams, fallbackStreams, updateState]);
 
   useEffect(() => {
-    applyFromUrl();
+    queueMicrotask(applyFromUrl);
   }, [applyFromUrl]);
 
   const pushToUrl = useCallback(
@@ -68,33 +75,29 @@ export function useSettingsUrl(fallbackStreams: Stream[]) {
 
   const setLocale = useCallback(
     (locale: Locale) => {
-      setState((prev) => {
-        const next = { ...prev, locale };
-        pushToUrl(next, true);
-        return next;
-      });
+      const next = { ...stateRef.current, locale };
+      updateState(next);
+      pushToUrl(next, true);
     },
-    [pushToUrl]
+    [pushToUrl, updateState]
   );
 
   const setShowTitles = useCallback((showTitles: boolean) => {
-    setState((prev) => ({ ...prev, showTitles }));
-  }, []);
+    updateState({ ...stateRef.current, showTitles });
+  }, [updateState]);
 
   const setStreams = useCallback(
     (streams: Stream[]) => {
-      setState((prev) => {
-        const next = { ...prev, streams };
-        pushToUrl(next, true);
-        return next;
-      });
+      const next = { ...stateRef.current, streams };
+      updateState(next);
+      pushToUrl(next, true);
     },
-    [pushToUrl]
+    [pushToUrl, updateState]
   );
 
   const setSizes = useCallback((sizes: AppState["sizes"]) => {
-    setState((prev) => ({ ...prev, sizes }));
-  }, []);
+    updateState({ ...stateRef.current, sizes });
+  }, [updateState]);
 
   return {
     hydrated,
